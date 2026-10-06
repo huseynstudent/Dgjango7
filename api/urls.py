@@ -19,5 +19,8 @@ urlpatterns = [
     path("categories/", views.category_list, name="category_list"),
     path("categories/<int:category_id>/", views.category_detail, name="category_detail"),
 
+    path("tags/", views.tag_list, name="tag_list"),
+    path("tags/<int:tag_id>/", views.tag_detail, name="tag_detail"),
+    path("stats/", views.stats, name="stats"),
 
 ]

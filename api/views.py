@@ -90,3 +90,47 @@ def category_detail(request, category_id):
     category.delete()                                             # postu olan kateqoriya → on_delete=PROTECT → 500 (Dərs 10)
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+# ═════════════════════════ TEQLƏR ═════════════════════════
+
+@api_view(["GET", "POST"])
+def tag_list(request):
+    if request.method == "GET":
+        tags = Tag.objects.all()
+        serializer = TagSerializer(tags, many=True)
+        return Response(serializer.data)
+
+    serializer = TagSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET", "PUT", "DELETE"])
+def tag_detail(request, tag_id):
+    tag = get_object_or_404(Tag, id=tag_id)
+
+    if request.method == "GET":
+        serializer = TagSerializer(tag)
+        return Response(serializer.data)
+
+    if request.method == "PUT":
+        serializer = TagSerializer(tag, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    tag.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+def stats(request):
+    data = {
+        "post_count": Post.objects.filter(is_published=True).count(),
+        "category_count": Category.objects.count(),
+        "tag_count": Tag.objects.count(),
+    }
+    return Response(data)
