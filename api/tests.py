@@ -2,12 +2,19 @@
 # API-nin hər ünvanını yoxlayır:  uv run manage.py test api
 # (blog/tests.py Dərs 13-dən qalır — HTML tərəf də işləməlidir:  uv run manage.py test)
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import AccessToken
+from django.contrib.auth import get_user_model
 
 from blog.models import Post, Category, Tag
 
 
 class Lesson14ApiTests(APITestCase):
     fixtures = ["demo_full"]
+
+    def authenticate_as(self, username="nigar"):
+        user = get_user_model().objects.get(username=username)
+        token = AccessToken.for_user(user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
 
     # ── [DƏRS 14] postlar ──
     def test_post_list(self):
@@ -53,6 +60,22 @@ class Lesson14ApiTests(APITestCase):
     # ── [PRAKTİKA 14] category_list · [DƏRS 14] category_detail ──
     def test_category_api(self):
         self.assertEqual(len(self.client.get("/api/categories/").json()), 3)
+        self.assertEqual(
+            self.client.post(
+                "/api/categories/", {"name": "İdman", "slug": "idman"}, format="json"
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.put(
+                "/api/categories/1/",
+                {"name": "Kod", "slug": "kod"},
+                format="json",
+            ).status_code,
+            401,
+        )
+        self.assertEqual(self.client.delete("/api/categories/1/").status_code, 401)
+        self.authenticate_as()
         r = self.client.post("/api/categories/", {"name": "İdman", "slug": "idman"}, format="json")
         self.assertEqual(r.status_code, 201)
         self.assertEqual(Category.objects.count(), 4)
@@ -68,6 +91,20 @@ class Lesson14ApiTests(APITestCase):
     # ── [EV 14] teqlər, stats ──
     def test_tag_api(self):
         self.assertEqual(len(self.client.get("/api/tags/").json()), 5)
+        self.assertEqual(
+            self.client.post(
+                "/api/tags/", {"name": "vscode", "slug": "vscode"}, format="json"
+            ).status_code,
+            401,
+        )
+        self.assertEqual(
+            self.client.put(
+                "/api/tags/1/", {"name": "python3", "slug": "python3"}, format="json"
+            ).status_code,
+            401,
+        )
+        self.assertEqual(self.client.delete("/api/tags/1/").status_code, 401)
+        self.authenticate_as()
         r = self.client.post("/api/tags/", {"name": "vscode", "slug": "vscode"}, format="json")
         self.assertEqual(r.status_code, 201)
         self.assertEqual(self.client.get("/api/tags/1/").json()["name"], "python")
@@ -80,6 +117,32 @@ class Lesson14ApiTests(APITestCase):
     def test_stats(self):
         r = self.client.get("/api/stats/")
         self.assertEqual(r.json(), {"post_count": 9, "category_count": 3, "tag_count": 5})
+
+    def test_me_requires_authentication_and_returns_content_counts(self):
+        self.assertEqual(self.client.get("/api/me/").status_code, 401)
+        self.authenticate_as()
+
+        response = self.client.get("/api/me/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["post_count"], Post.objects.filter(author__username="nigar").count())
+        self.assertEqual(
+            response.json()["comment_count"],
+            get_user_model().objects.get(username="nigar").comments.count(),
+        )
+
+    def test_token_obtain_pair(self):
+        user = get_user_model().objects.create_user(username="jwt-user", password="test-password")
+
+        response = self.client.post(
+            "/api/token/",
+            {"username": user.username, "password": "test-password"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("access", response.json())
+        self.assertIn("refresh", response.json())
 
     def test_html_blog_still_works(self):
         for url in ["/", "/post/1/", "/categories/", "/tag/python/"]:

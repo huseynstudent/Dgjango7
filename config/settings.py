@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import datetime
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -134,3 +135,14 @@ MEDIA_ROOT = BASE_DIR / 'media'  # diskdəki qovluq — .gitignore-da olmalıdı
 LOGIN_URL = 'accounts:login'  # @login_required giriş etməyəni bura göndərir
 LOGIN_REDIRECT_URL = 'blog:post_list'  # girişdən sonra hara
 LOGOUT_REDIRECT_URL = 'blog:post_list'  # çıxışdan sonra hara
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=7),
+}

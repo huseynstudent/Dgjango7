@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from blog.models import Post, Category, Tag
@@ -58,6 +59,7 @@ def post_detail(request, post_id):
 
 # [PRAKTİKA 14] — post_list-in əkizi (tələbə yazır)
 @api_view(["GET", "POST"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def category_list(request):
     if request.method == "GET":
         categories = Category.objects.all()
@@ -73,6 +75,7 @@ def category_list(request):
 
 # [DƏRS 14] praktikadan SONRA müəllim yazır — post_detail-in əkizi (“qalanını mən yazıram, siz baxırsınız”)
 @api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def category_detail(request, category_id):
     category = get_object_or_404(Category, id=category_id)
 
@@ -94,6 +97,7 @@ def category_detail(request, category_id):
 # ═════════════════════════ TEQLƏR ═════════════════════════
 
 @api_view(["GET", "POST"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def tag_list(request):
     if request.method == "GET":
         tags = Tag.objects.all()
@@ -108,6 +112,7 @@ def tag_list(request):
 
 
 @api_view(["GET", "PUT", "DELETE"])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def tag_detail(request, tag_id):
     tag = get_object_or_404(Tag, id=tag_id)
 
@@ -124,6 +129,19 @@ def tag_detail(request, tag_id):
 
     tag.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def me(request):
+    user = request.user
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "post_count": user.posts.count(),
+        "comment_count": user.comments.count(),
+    })
 
 
 @api_view(["GET"])
