@@ -22,6 +22,7 @@ urlpatterns = [
 
     path("tags/", views.tag_list, name="tag_list"),
     path("tags/<int:tag_id>/", views.tag_detail, name="tag_detail"),
+    path("tags/<int:tag_id>/posts/", views.tag_posts, name="tag_posts"),
     path("me/", views.me, name="me"),
     path("stats/", views.stats, name="stats"),
     path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

@@ -132,6 +132,14 @@ def tag_detail(request, tag_id):
 
 
 @api_view(["GET"])
+def tag_posts(request, tag_id):
+    tag = get_object_or_404(Tag, id=tag_id)
+    posts = tag.posts.filter(is_published=True)
+    serializer = PostSerializer(posts, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def me(request):
     user = request.user

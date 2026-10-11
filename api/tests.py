@@ -44,6 +44,8 @@ class Lesson14ApiTests(APITestCase):
         r = self.client.get("/api/posts/1/")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["title"], "Python-da ilk addım")
+        self.assertEqual(r.json()["comment_count"], 3)
+        self.assertEqual(self.client.get("/api/posts/2/").json()["comment_count"], 2)
         self.assertEqual(self.client.get("/api/posts/999/").status_code, 404)
         self.assertIn("detail", self.client.get("/api/posts/999/").json())
 
@@ -59,7 +61,9 @@ class Lesson14ApiTests(APITestCase):
 
     # ── [PRAKTİKA 14] category_list · [DƏRS 14] category_detail ──
     def test_category_api(self):
-        self.assertEqual(len(self.client.get("/api/categories/").json()), 3)
+        categories = self.client.get("/api/categories/").json()
+        self.assertEqual(len(categories), 3)
+        self.assertEqual(self.client.get("/api/categories/1/").json()["post_count"], 4)
         self.assertEqual(
             self.client.post(
                 "/api/categories/", {"name": "İdman", "slug": "idman"}, format="json"
@@ -108,6 +112,11 @@ class Lesson14ApiTests(APITestCase):
         r = self.client.post("/api/tags/", {"name": "vscode", "slug": "vscode"}, format="json")
         self.assertEqual(r.status_code, 201)
         self.assertEqual(self.client.get("/api/tags/1/").json()["name"], "python")
+        tag_posts = self.client.get("/api/tags/1/posts/")
+        self.assertEqual(tag_posts.status_code, 200)
+        self.assertEqual(len(tag_posts.json()), 4)
+        self.assertTrue(all(post["is_published"] for post in tag_posts.json()))
+        self.assertEqual(self.client.get("/api/tags/99/posts/").status_code, 404)
         r = self.client.put("/api/tags/1/", {"name": "python3", "slug": "python3"}, format="json")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(Tag.objects.get(id=1).name, "python3")

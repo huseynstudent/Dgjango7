@@ -12,20 +12,31 @@ from blog.models import Post, Category, Tag
 
 # [DƏRS 14] müəllim yazır
 class PostSerializer(serializers.ModelSerializer):
+    comment_count = serializers.SerializerMethodField()
+
+    def get_comment_count(self, post):
+        return post.comments.filter(is_active=True).count()
+
     class Meta:
         model = Post                                              # hansı model (ModelForm-dakı kimi)
         fields = [                                                # JSON-da hansı sahələr olsun
             "id", "title", "author", "category", "tags",
             "content", "image", "is_published", "views", "created_at",
+            "comment_count",
         ]
         read_only_fields = ["views", "created_at"]                # yalnız oxunur — POST-da göndərilsə də, nəzərə alınmır
 
 
 # [PRAKTİKA 14] — PostSerializer-in əkizi
 class CategorySerializer(serializers.ModelSerializer):
+    post_count = serializers.SerializerMethodField()
+
+    def get_post_count(self, category):
+        return category.posts.filter(is_published=True).count()
+
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "description"]
+        fields = ["id", "name", "slug", "description", "post_count"]
 
 
 class TagSerializer(serializers.ModelSerializer):
